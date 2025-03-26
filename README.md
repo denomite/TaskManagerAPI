@@ -1,2 +1,3 @@
 # TaskManagerAPI
-A Scalable RESTful Service Built with Golang
+
+A Scalable RESTful service built with Golang
