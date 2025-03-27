@@ -1,3 +1,8 @@
+/*
+Basic CRUD operations for managins tasks
+SetupRouter initializes the Gin router and API routes
+- API routes to create task, get all tasks, get a task by ID, update task and delete a task
+*/
 package main
 
 import (
@@ -8,7 +13,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// SetupRouter initializes the Gin router and API routes
 func SetupRouter(db *gorm.DB) *gin.Engine {
 	r := gin.Default()
 
@@ -28,7 +32,6 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 		c.JSON(http.StatusOK, task)
 	})
 
-	// Get all tasks
 	r.GET("/tasks", func(c *gin.Context) {
 		var tasks []Task
 		if err := db.Find(&tasks).Error; err != nil {
@@ -39,7 +42,6 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 		c.JSON(http.StatusOK, tasks)
 	})
 
-	// Get a task by ID
 	r.GET("/tasks/:id", func(c *gin.Context) {
 		id, err := strconv.Atoi(c.Param("id"))
 		if err != nil {
@@ -56,7 +58,6 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 		c.JSON(http.StatusOK, task)
 	})
 
-	// Update a task
 	r.PUT("/tasks/:id", func(c *gin.Context) {
 		id, err := strconv.Atoi(c.Param("id"))
 		if err != nil {
@@ -88,7 +89,6 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 		c.JSON(http.StatusOK, existingTask)
 	})
 
-	// Delete a task
 	r.DELETE("/tasks/:id", func(c *gin.Context) {
 		id, err := strconv.Atoi(c.Param("id"))
 		if err != nil {
