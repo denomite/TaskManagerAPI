@@ -1,3 +1,7 @@
+/*
+This file is designed to provide a database connection string for PostreSQL database,
+with configuration values from .env file.
+*/
 package config
 
 import (
