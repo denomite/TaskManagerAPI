@@ -1,7 +1,8 @@
 /*
 Database interaction (CRUD operations)
-  - SetupDatabase initialize the database connection
+  - SetupDatabase initialize the PostgreSql database connection
     AutoMigrate: automatically create or updates the db schema for the Task struct
+  - Updated to Config.go(handles loading env) and .env (to store informations)
   - CreateTask insert a new task into database
   - GetAllTask retrieves all task from the database
   - GetTaskByID retrieves a single task by ID
@@ -12,14 +13,15 @@ package main
 
 import (
 	"log"
-	"os"
+
+	"TaskManagerAPI/config"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
 func SetupDatabase() *gorm.DB {
-	dsn := os.Getenv("DATABASE_URL")
+	dsn := config.GedDatabaseDSN()
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		log.Fatal("Failed to connect to database:", err)
