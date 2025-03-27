@@ -12,30 +12,28 @@ package main
 
 import (
 	"log"
+	"os"
 
-	"gorm.io/driver/sqlite"
+	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
 func SetupDatabase() *gorm.DB {
-	db, err := gorm.Open(sqlite.Open("task.db"), &gorm.Config{})
+	dsn := os.Getenv("DATABASE_URL")
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
-		log.Fatal("Failed to connect to database", err)
+		log.Fatal("Failed to connect to database:", err)
 	}
 
-	if err := db.AutoMigrate(&Task{}); err != nil {
-		log.Fatal("Failed to migrate database", err)
-	}
-
+	db.AutoMigrate(&Task{})
 	return db
 }
-
 func CreateTask(db *gorm.DB, task *Task) *Task {
 	db.Create(task)
 	return task
 }
 
-func GetAllTask(db *gorm.DB) []Task {
+func GetAllTasks(db *gorm.DB) []Task {
 	var tasks []Task
 	db.Find(&tasks)
 	return tasks
