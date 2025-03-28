@@ -1,7 +1,15 @@
 /*
 Basic CRUD operations for managins tasks
 SetupRouter initializes the Gin router and API routes
-- API routes to create task, get all tasks, get a task by ID, update task and delete a task
+  - API routes to create task, get all tasks, get a task by ID, update task and delete a task.
+  - Check for errors in every database call, which return appropriate HTTP status code, to help
+    client(frontend, API users).
+    Https status code
+    200 OK						Request was successful.
+    201 Created 				A resource was successfully created.
+    400 Bad Request				The request has invalid input(e.g., invalid JSON, invalid ID).
+    404 Not found				The requested resource(task) does not exist.
+    500 Internal server Error	Something went wrong on the server(e.g., database error).
 */
 package main
 
@@ -16,25 +24,25 @@ import (
 func SetupRouter(db *gorm.DB) *gin.Engine {
 	r := gin.Default()
 
-	// Create a new task
 	r.POST("/tasks", func(c *gin.Context) {
 		var task Task
 		if err := c.ShouldBindJSON(&task); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
 			return
 		}
 
-		if err := db.Create(&task).Error; err != nil {
+		createdTask, err := CreateTask(db, &task)
+		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create task"})
 			return
 		}
 
-		c.JSON(http.StatusOK, task)
+		c.JSON(http.StatusCreated, createdTask)
 	})
 
 	r.GET("/tasks", func(c *gin.Context) {
-		var tasks []Task
-		if err := db.Find(&tasks).Error; err != nil {
+		tasks, err := GetAllTasks(db)
+		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve tasks"})
 			return
 		}
@@ -43,15 +51,23 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 	})
 
 	r.GET("/tasks/:id", func(c *gin.Context) {
-		id, err := strconv.Atoi(c.Param("id"))
+		var task *Task
+		id := c.Param("id")
+
+		taskID, err := strconv.Atoi(id)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid task ID"})
 			return
 		}
 
-		var task Task
-		if err := db.First(&task, id).Error; err != nil {
-			c.JSON(http.StatusNotFound, gin.H{"message": "Task not found"})
+		task, err = GetTaskByID(db, uint(taskID))
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve task"})
+			return
+		}
+
+		if task == nil {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Task not found"})
 			return
 		}
 
@@ -59,44 +75,63 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 	})
 
 	r.PUT("/tasks/:id", func(c *gin.Context) {
-		id, err := strconv.Atoi(c.Param("id"))
+		id := c.Param("id")
+
+		taskID, err := strconv.Atoi(id)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid task ID"})
 			return
 		}
 
-		var task Task
-		if err := c.ShouldBindJSON(&task); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		var updatedTask *Task
+		if err := c.ShouldBindJSON(&updatedTask); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
 			return
 		}
 
-		var existingTask Task
-		if err := db.First(&existingTask, id).Error; err != nil {
-			c.JSON(http.StatusNotFound, gin.H{"message": "Task not found"})
+		existingTask, err := GetTaskByID(db, uint(taskID))
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve task"})
 			return
 		}
 
-		existingTask.Title = task.Title
-		existingTask.Description = task.Description
-		existingTask.IsCompleted = task.IsCompleted
+		if existingTask == nil {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Task not found"})
+			return
+		}
 
-		if err := db.Save(&existingTask).Error; err != nil {
+		updatedTask.ID = existingTask.ID
+		updatedTask, err = UpdateTask(db, updatedTask)
+		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update task"})
 			return
 		}
 
-		c.JSON(http.StatusOK, existingTask)
+		c.JSON(http.StatusOK, updatedTask)
 	})
 
 	r.DELETE("/tasks/:id", func(c *gin.Context) {
-		id, err := strconv.Atoi(c.Param("id"))
+		id := c.Param("id")
+
+		taskID, err := strconv.Atoi(id)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid task ID"})
 			return
 		}
 
-		if err := db.Delete(&Task{}, id).Error; err != nil {
+		existingTask, err := GetTaskByID(db, uint(taskID))
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve task"})
+			return
+		}
+
+		if existingTask == nil {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Task not found"})
+			return
+		}
+
+		err = DeleteTask(db, uint(taskID))
+		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete task"})
 			return
 		}
