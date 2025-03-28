@@ -15,10 +15,13 @@ import (
 	"log"
 
 	"TaskManagerAPI/config"
+	"TaskManagerAPI/models"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
+
+type Task = models.Task
 
 func SetupDatabase() *gorm.DB {
 	dsn := config.GetDatabaseDSN()
