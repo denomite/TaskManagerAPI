@@ -21,7 +21,7 @@ import (
 )
 
 func SetupDatabase() *gorm.DB {
-	dsn := config.GedDatabaseDSN()
+	dsn := config.GetDatabaseDSN()
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		log.Fatal("Failed to connect to database:", err)
@@ -30,30 +30,43 @@ func SetupDatabase() *gorm.DB {
 	db.AutoMigrate(&Task{})
 	return db
 }
-func CreateTask(db *gorm.DB, task *Task) *Task {
-	db.Create(task)
-	return task
+
+func CreateTask(db *gorm.DB, task *Task) (*Task, error) {
+	if err := db.Create(task).Error; err != nil {
+		return nil, err
+	}
+	return task, nil
 }
 
-func GetAllTasks(db *gorm.DB) []Task {
+func GetAllTasks(db *gorm.DB) ([]Task, error) {
 	var tasks []Task
-	db.Find(&tasks)
-	return tasks
+	if err := db.Find(&tasks).Error; err != nil {
+		return nil, err
+	}
+	return tasks, nil
 }
 
-func GetTaskByID(db *gorm.DB, id uint) *Task {
+func GetTaskByID(db *gorm.DB, id uint) (*Task, error) {
 	var task Task
 	if err := db.First(&task, id).Error; err != nil {
-		return nil
+		if err == gorm.ErrRecordNotFound {
+			return nil, nil
+		}
+		return nil, err
 	}
-	return &task
+	return &task, nil
 }
 
-func UpdateTask(db *gorm.DB, task *Task) *Task {
-	db.Save(task)
-	return task
+func UpdateTask(db *gorm.DB, task *Task) (*Task, error) {
+	if err := db.Save(task).Error; err != nil {
+		return nil, err
+	}
+	return task, nil
 }
 
-func DeleteTask(db *gorm.DB, id uint) {
-	db.Delete(&Task{}, id)
+func DeleteTask(db *gorm.DB, id uint) error {
+	if err := db.Delete(&Task{}, id).Error; err != nil {
+		return err
+	}
+	return nil
 }

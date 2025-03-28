@@ -18,7 +18,7 @@ func LoadEnv() {
 	}
 }
 
-func GedDatabaseDSN() string {
+func GetDatabaseDSN() string {
 	LoadEnv()
 
 	host := os.Getenv("DB_HOST")
