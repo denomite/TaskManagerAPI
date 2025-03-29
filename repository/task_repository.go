@@ -9,7 +9,7 @@ Database interaction (CRUD operations)
   - UpdateTask updates an existing task
   - DeleteTask removes a task by ID
 */
-package main
+package repository
 
 import (
 	"log"

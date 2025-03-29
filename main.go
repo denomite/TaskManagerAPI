@@ -4,9 +4,14 @@ It initializes the database connection, set up the routes and start the server o
 */
 package main
 
+import (
+	"TaskManagerAPI/repository"
+	"TaskManagerAPI/routes"
+)
+
 func main() {
 
-	db := SetupDatabase()
-	r := SetupRouter(db)
+	db := repository.SetupDatabase()
+	r := routes.SetupRouter(db)
 	r.Run(":8080")
 }
