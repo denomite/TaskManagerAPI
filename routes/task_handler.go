@@ -11,15 +11,19 @@ SetupRouter initializes the Gin router and API routes
     404 Not found				The requested resource(task) does not exist.
     500 Internal server Error	Something went wrong on the server(e.g., database error).
 */
-package main
+package routes
 
 import (
+	"TaskManagerAPI/models"
+	"TaskManagerAPI/repository"
 	"net/http"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
+
+type Task = models.Task
 
 func SetupRouter(db *gorm.DB) *gin.Engine {
 	r := gin.Default()
@@ -31,7 +35,7 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 			return
 		}
 
-		createdTask, err := CreateTask(db, &task)
+		createdTask, err := repository.CreateTask(db, &task)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create task"})
 			return
@@ -41,7 +45,7 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 	})
 
 	r.GET("/tasks", func(c *gin.Context) {
-		tasks, err := GetAllTasks(db)
+		tasks, err := repository.GetAllTasks(db)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve tasks"})
 			return
@@ -60,7 +64,7 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 			return
 		}
 
-		task, err = GetTaskByID(db, uint(taskID))
+		task, err = repository.GetTaskByID(db, uint(taskID))
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve task"})
 			return
@@ -89,7 +93,7 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 			return
 		}
 
-		existingTask, err := GetTaskByID(db, uint(taskID))
+		existingTask, err := repository.GetTaskByID(db, uint(taskID))
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve task"})
 			return
@@ -101,7 +105,7 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 		}
 
 		updatedTask.ID = existingTask.ID
-		updatedTask, err = UpdateTask(db, updatedTask)
+		updatedTask, err = repository.UpdateTask(db, updatedTask)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update task"})
 			return
@@ -119,7 +123,7 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 			return
 		}
 
-		existingTask, err := GetTaskByID(db, uint(taskID))
+		existingTask, err := repository.GetTaskByID(db, uint(taskID))
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve task"})
 			return
@@ -130,7 +134,7 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 			return
 		}
 
-		err = DeleteTask(db, uint(taskID))
+		err = repository.DeleteTask(db, uint(taskID))
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete task"})
 			return
