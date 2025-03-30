@@ -16,6 +16,7 @@ package routes
 import (
 	"TaskManagerAPI/models"
 	"TaskManagerAPI/repository"
+	"TaskManagerAPI/utils"
 	"net/http"
 	"strconv"
 
@@ -28,6 +29,7 @@ type Task = models.Task
 func SetupRouter(db *gorm.DB) *gin.Engine {
 	r := gin.Default()
 
+	// Create task - Only authenticated users can create tasks
 	r.POST("/tasks", func(c *gin.Context) {
 		var task Task
 		if err := c.ShouldBindJSON(&task); err != nil {
@@ -35,7 +37,14 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 			return
 		}
 
-		createdTask, err := repository.CreateTask(db, &task)
+		// Extract user ID from JWT token
+		userID, err := utils.GetUserIDFromContext(c)
+		if err != nil {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+			return
+		}
+
+		createdTask, err := repository.CreateTask(db, &task, userID)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create task"})
 			return
@@ -45,6 +54,7 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 	})
 
 	r.GET("/tasks", func(c *gin.Context) {
+
 		tasks, err := repository.GetAllTasks(db)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve tasks"})

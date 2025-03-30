@@ -5,13 +5,30 @@ It initializes the database connection, set up the routes and start the server o
 package main
 
 import (
-	"TaskManagerAPI/repository"
-	"TaskManagerAPI/routes"
+	"TaskManagerAPI/controllers"
+	"TaskManagerAPI/models"
+
+	"github.com/gin-gonic/gin"
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
 )
 
 func main() {
+	// Initialize the database
+	db, err := gorm.Open(sqlite.Open("task_manager.db"), &gorm.Config{})
+	if err != nil {
+		panic("Failed to connect to the database")
+	}
 
-	db := repository.SetupDatabase()
-	r := routes.SetupRouter(db)
+	// Migrate the schema (create tables)
+	db.AutoMigrate(&models.User{}, &models.Task{})
+
+	// Set up the router
+	r := gin.Default()
+
+	// Pass DB to routes
+	controllers.SetupAuthRouter(db, r)
+	controllers.SetupTaskRouter(db, r)
+
 	r.Run(":8080")
 }

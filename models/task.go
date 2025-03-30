@@ -11,8 +11,9 @@ import "gorm.io/gorm"
 
 type Task struct {
 	gorm.Model
-	Title       string `json:"title"`
+	Title       string `json:"title" binding:"required"`
 	Description string `json:"description"`
-	Completed   bool   `json:"completed"`
+	Done        bool   `json:"done"`
 	UserID      uint   `json:"user_id"`
+	User        User   `gorm:"foreignKey:UserID"`
 }

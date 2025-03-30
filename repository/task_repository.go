@@ -34,15 +34,16 @@ func SetupDatabase() *gorm.DB {
 	return db
 }
 
-func CreateTask(db *gorm.DB, task *Task) (*Task, error) {
+func CreateTask(db *gorm.DB, task *models.Task, userID uint) (*models.Task, error) {
+	task.UserID = userID
 	if err := db.Create(task).Error; err != nil {
 		return nil, err
 	}
 	return task, nil
 }
 
-func GetAllTasks(db *gorm.DB) ([]Task, error) {
-	var tasks []Task
+func GetAllTasks(db *gorm.DB) ([]models.Task, error) {
+	var tasks []models.Task
 	if err := db.Find(&tasks).Error; err != nil {
 		return nil, err
 	}
@@ -60,7 +61,7 @@ func GetTaskByID(db *gorm.DB, id uint) (*Task, error) {
 	return &task, nil
 }
 
-func UpdateTask(db *gorm.DB, task *Task) (*Task, error) {
+func UpdateTask(db *gorm.DB, task *models.Task) (*models.Task, error) {
 	if err := db.Save(task).Error; err != nil {
 		return nil, err
 	}
