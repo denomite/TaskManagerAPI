@@ -32,15 +32,14 @@ func Register(c *gin.Context) {
 	}
 
 	// Hash password before saving to DB
-	hashedPassword, err := utils.HashPassword(input.Password)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to hash password"})
-		return
-	}
-
-	// Create user
+	hashedPassword, _ := utils.HashPassword(input.Password)
 	user := models.User{Username: input.Username, Password: hashedPassword}
-	if err := repository.CreateUser(c.MustGet("db").(*gorm.DB), &user); err != nil {
+
+	// Retrieve the db connection from the context
+	db := c.MustGet("db").(*gorm.DB)
+
+	// Call repository to create the user
+	if err := repository.CreateUser(db, &user); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create user"})
 		return
 	}
@@ -59,25 +58,23 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	// Get user by username from the database
-	user, err := repository.GetUserByUsername(c.MustGet("db").(*gorm.DB), input.Username)
+	// Retrieve the db connection from the context
+	db := c.MustGet("db").(*gorm.DB)
+
+	// Retrieve the user by username
+	user, err := repository.GetUserByUsername(db, input.Username)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
 		return
 	}
 
-	// Check password hash
+	// Check if the password is correct
 	if !utils.CheckPasswordHash(input.Password, user.Password) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
 		return
 	}
 
 	// Generate JWT token
-	token, err := utils.GenerateJWT(user.ID, user.Role)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not generate token"})
-		return
-	}
-
+	token, _ := utils.GenerateJWT(user.ID, user.Role)
 	c.JSON(http.StatusOK, gin.H{"token": token})
 }

@@ -23,14 +23,14 @@ func AuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		tokenStr := strings.Split(authHeader, "Bearer ")
+		tokenStr := strings.TrimPrefix(authHeader, "Bearer ")
 		if len(tokenStr) < 2 {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token format"})
 			c.Abort()
 			return
 		}
 
-		token, err := jwt.Parse(tokenStr[1], func(token *jwt.Token) (interface{}, error) {
+		token, err := jwt.Parse(tokenStr, func(token *jwt.Token) (interface{}, error) {
 			return utils.JwtKey, nil
 		})
 
