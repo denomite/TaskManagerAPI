@@ -56,14 +56,14 @@ DELETE /tasks/:id – Delete a task.
 
 ## Project structure
 
-/TaskManagerAPI
-├── /controllers # API logic and handler functions
-├── /models # Task and User models
-├── /repository # Database interaction (CRUD operations)
-├── /routes # Route definitions and middleware
-├── /utils # Helper functions (e.g., for JWT, password hashing)
-├── /config # Configuration files (e.g., DB, environment variables)
-├── main.go # Entry point to run the application
+/TaskManagerAPI  
+├── /controllers # API logic and handler functions  
+├── /models # Task and User models  
+├── /repository # Database interaction (CRUD operations)  
+├── /routes # Route definitions and middleware  
+├── /utils # Helper functions (e.g., for JWT, password hashing)  
+├── /config # Configuration files (e.g., DB, environment variables)  
+├── main.go # Entry point to run the application  
 └── go.mod # Go module dependencies
 
 ### In the near future
