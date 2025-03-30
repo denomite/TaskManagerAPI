@@ -116,6 +116,7 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 			return
 		}
 
+		// Fetch the task by ID
 		existingTask, err := repository.GetTaskByID(db, uint(taskID))
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve task"})
@@ -127,7 +128,11 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 			return
 		}
 
+		// Preserve the user ID (do not overwrite it)
+		updatedTask.UserID = existingTask.UserID
 		updatedTask.ID = existingTask.ID
+
+		// Update the task
 		updatedTask, err = repository.UpdateTask(db, updatedTask)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update task"})

@@ -70,10 +70,19 @@ func GetTaskByID(db *gorm.DB, id uint) (*Task, error) {
 	return &task, nil
 }
 
-func UpdateTask(db *gorm.DB, task *models.Task) (*models.Task, error) {
-	if err := db.Save(task).Error; err != nil {
+func UpdateTask(db *gorm.DB, task *Task) (*Task, error) {
+	// We don't want to update the ID or CreatedAt field.
+	// We only update the fields that are passed in.
+	err := db.Model(task).Where("id = ?", task.ID).Updates(Task{
+		Title:       task.Title,
+		Description: task.Description,
+		Done:        task.Done,
+	}).Error
+
+	if err != nil {
 		return nil, err
 	}
+
 	return task, nil
 }
 
