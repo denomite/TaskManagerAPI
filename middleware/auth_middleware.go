@@ -7,41 +7,39 @@ package middleware
 
 import (
 	"TaskManagerAPI/utils"
+	"fmt"
 	"net/http"
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt/v5"
 )
 
 func AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		authHeader := c.GetHeader("Authorization")
-		if authHeader == "" {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization header required"})
+		tokenString := c.GetHeader("Authorization")
+		fmt.Println("🔵 Received Authorization Header:", tokenString) // Log received token
+
+		if tokenString == "" {
+			fmt.Println("🔴 Authorization header is missing")
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
 			c.Abort()
 			return
 		}
 
-		tokenStr := strings.TrimPrefix(authHeader, "Bearer ")
-		if len(tokenStr) < 2 {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token format"})
+		tokenString = strings.TrimPrefix(tokenString, "Bearer ")
+		fmt.Println("🟢 Extracted Token:", tokenString) // Log extracted token
+
+		claims, err := utils.ValidateJWT(tokenString)
+		if err != nil {
+			fmt.Println("🔴 Token validation failed:", err)
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
 			c.Abort()
 			return
 		}
 
-		token, err := jwt.Parse(tokenStr, func(token *jwt.Token) (interface{}, error) {
-			return utils.JwtKey, nil
-		})
+		fmt.Println("🟢 Token is valid. Extracted UserID:", claims.UserID)
+		c.Set("userID", claims.UserID)
 
-		if err != nil || !token.Valid {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired token"})
-			c.Abort()
-			return
-		}
-
-		claims, _ := token.Claims.(jwt.MapClaims)
-		c.Set("user_id", uint(claims["user_id"].(float64)))
 		c.Next()
 	}
 }

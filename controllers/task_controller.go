@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"TaskManagerAPI/middleware"
 	"TaskManagerAPI/models"
 	"TaskManagerAPI/repository"
 	"net/http"
@@ -11,7 +12,7 @@ import (
 )
 
 func SetupTaskRouter(db *gorm.DB, r *gin.Engine) {
-	taskGroup := r.Group("/tasks")
+	taskGroup := r.Group("/tasks", middleware.AuthMiddleware())
 	{
 		taskGroup.POST("/", func(c *gin.Context) {
 			var task models.Task

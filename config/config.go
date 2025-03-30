@@ -14,7 +14,17 @@ import (
 func LoadEnv() {
 	err := godotenv.Load()
 	if err != nil {
-		fmt.Println("No .env file found, using system environment variables.")
+		fmt.Println("⚠️ No .env file found, using system environment variables.")
+	} else {
+		fmt.Println("✅ .env file loaded successfully!")
+	}
+
+	// 🔍 Debug: Check if JWT_SECRET is being loaded
+	secret := os.Getenv("JWT_SECRET")
+	if secret == "" {
+		fmt.Println("❌ ERROR: JWT_SECRET is not set!")
+	} else {
+		fmt.Println("🔑 JWT_SECRET Loaded:", secret)
 	}
 }
 

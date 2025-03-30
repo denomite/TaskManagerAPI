@@ -14,6 +14,7 @@ SetupRouter initializes the Gin router and API routes
 package routes
 
 import (
+	"TaskManagerAPI/middleware"
 	"TaskManagerAPI/models"
 	"TaskManagerAPI/repository"
 	"TaskManagerAPI/utils"
@@ -29,38 +30,50 @@ type Task = models.Task
 func SetupRouter(db *gorm.DB) *gin.Engine {
 	r := gin.Default()
 
-	// Create task - Only authenticated users can create tasks
-	r.POST("/tasks", func(c *gin.Context) {
-		var task Task
-		if err := c.ShouldBindJSON(&task); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
-			return
-		}
+	// Protected task routes (require authentication)
+	taskRoutes := r.Group("/tasks")
+	taskRoutes.Use(middleware.AuthMiddleware()) // 🔒 Protects all task routes
+	{
+		taskRoutes.POST("/", func(c *gin.Context) {
+			var task models.Task
+			if err := c.ShouldBindJSON(&task); err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+				return
+			}
 
-		// Extract user ID from JWT token
-		userID, err := utils.GetUserIDFromContext(c)
-		if err != nil {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
-			return
-		}
+			// Extract user ID from JWT token
+			userID, err := utils.GetUserIDFromContext(c)
+			if err != nil {
+				c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+				return
+			}
 
-		createdTask, err := repository.CreateTask(db, &task, userID)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create task"})
-			return
-		}
+			createdTask, err := repository.CreateTask(db, &task, userID)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create task"})
+				return
+			}
 
-		c.JSON(http.StatusCreated, createdTask)
-	})
+			c.JSON(http.StatusCreated, createdTask)
+		})
 
+		taskRoutes.GET("/", func(c *gin.Context) {
+			tasks, err := repository.GetAllTasks(db)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch tasks"})
+				return
+			}
+			c.JSON(http.StatusOK, tasks)
+		})
+	}
+
+	// Unprotected route (example, if you intended this as a public endpoint)
 	r.GET("/tasks", func(c *gin.Context) {
-
 		tasks, err := repository.GetAllTasks(db)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve tasks"})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch tasks"})
 			return
 		}
-
 		c.JSON(http.StatusOK, tasks)
 	})
 

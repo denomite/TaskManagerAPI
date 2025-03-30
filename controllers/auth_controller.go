@@ -58,23 +58,40 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	// Retrieve the db connection from the context
-	db := c.MustGet("db").(*gorm.DB)
+	// Get database instance from Gin context
+	db, exists := c.Get("db")
+	if !exists {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database not found in context"})
+		return
+	}
 
-	// Retrieve the user by username
-	user, err := repository.GetUserByUsername(db, input.Username)
+	// Convert db to *gorm.DB type
+	gormDB, ok := db.(*gorm.DB)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database instance is invalid"})
+		return
+	}
+
+	// Fetch user from database
+	user, err := repository.GetUserByUsername(gormDB, input.Username)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
 		return
 	}
 
-	// Check if the password is correct
+	// Check password
 	if !utils.CheckPasswordHash(input.Password, user.Password) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
 		return
 	}
 
 	// Generate JWT token
-	token, _ := utils.GenerateJWT(user.ID, user.Role)
+	token, err := utils.GenerateJWT(user.ID, user.Role)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
+		return
+	}
+
+	// Return token
 	c.JSON(http.StatusOK, gin.H{"token": token})
 }

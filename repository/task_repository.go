@@ -35,13 +35,22 @@ func SetupDatabase() *gorm.DB {
 }
 
 func CreateTask(db *gorm.DB, task *models.Task, userID uint) (*models.Task, error) {
+	// Set the UserID field in the task
 	task.UserID = userID
+
+	// Create the task
 	if err := db.Create(task).Error; err != nil {
 		return nil, err
 	}
-	return task, nil
-}
 
+	// Preload the associated User when returning the task (to fill the 'User' field)
+	var createdTask models.Task
+	if err := db.Preload("User").First(&createdTask, task.ID).Error; err != nil {
+		return nil, err
+	}
+
+	return &createdTask, nil
+}
 func GetAllTasks(db *gorm.DB) ([]models.Task, error) {
 	var tasks []models.Task
 	if err := db.Find(&tasks).Error; err != nil {
