@@ -32,8 +32,9 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 
 	// Protected task routes (require authentication)
 	taskRoutes := r.Group("/tasks")
-	taskRoutes.Use(middleware.AuthMiddleware("admin")) // 🔒 Protects all task routes
+	taskRoutes.Use(middleware.AuthMiddleware()) // 🔒 Protects all task routes
 	{
+		// Task creation(Admin can create any task, User can only create their own tasks)
 		taskRoutes.POST("/", func(c *gin.Context) {
 			var task models.Task
 			if err := c.ShouldBindJSON(&task); err != nil {
@@ -48,6 +49,16 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 				return
 			}
 
+			// Set the UserID to associate the task with the logged-in user
+			task.UserID = userID
+
+			// if the user is not a admin, ensure they can only create their own tasks
+			role, _ := c.Get("role")
+			if role != "admin" {
+				task.UserID = userID
+			}
+
+			// Create the task
 			createdTask, err := repository.CreateTask(db, &task, userID)
 			if err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create task"})
@@ -57,8 +68,21 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 			c.JSON(http.StatusCreated, createdTask)
 		})
 
+		// Admin can view all tasks, Users can only see their tasks
 		taskRoutes.GET("/", func(c *gin.Context) {
-			tasks, err := repository.GetAllTasks(db)
+			role, _ := c.Get("role")
+			var tasks []models.Task
+			var err error
+
+			if role == "admin" {
+				// Admin can view all tasks
+				tasks, err = repository.GetAllTasks(db)
+			} else {
+				// User can only view their tasks
+				userID, _ := c.Get("userID")
+				tasks, err = repository.GetTasksByUserID(db, userID.(uint))
+			}
+
 			if err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch tasks"})
 				return
@@ -67,79 +91,44 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 		})
 	}
 
-	// Unprotected route (example, if you intended this as a public endpoint)
-	r.GET("/tasks", func(c *gin.Context) {
-		tasks, err := repository.GetAllTasks(db)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch tasks"})
-			return
-		}
-		c.JSON(http.StatusOK, tasks)
-	})
-
-	r.GET("/tasks/:id", func(c *gin.Context) {
-		var task *Task
-		id := c.Param("id")
-
-		taskID, err := strconv.Atoi(id)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid task ID"})
-			return
-		}
-
-		task, err = repository.GetTaskByID(db, uint(taskID))
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve task"})
-			return
-		}
-
-		if task == nil {
-			c.JSON(http.StatusNotFound, gin.H{"error": "Task not found"})
-			return
-		}
-
-		c.JSON(http.StatusOK, task)
-	})
-
+	// Task update route for Admin and User
 	r.PUT("/tasks/:id", func(c *gin.Context) {
 		id := c.Param("id")
+		var updatedTask models.Task
+		taskID, _ := strconv.Atoi(id)
 
-		taskID, err := strconv.Atoi(id)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid task ID"})
-			return
-		}
-
-		var updatedTask *Task
 		if err := c.ShouldBindJSON(&updatedTask); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
 			return
 		}
 
-		// Fetch the task by ID
+		// Fetch the task from DB
 		existingTask, err := repository.GetTaskByID(db, uint(taskID))
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve task"})
 			return
 		}
 
-		if existingTask == nil {
-			c.JSON(http.StatusNotFound, gin.H{"error": "Task not found"})
+		// Check if the user can update this task
+		userID, _ := c.Get("userID")
+		role, _ := c.Get("role")
+
+		if role != "admin" && existingTask.UserID != userID.(uint) {
+			c.JSON(http.StatusForbidden, gin.H{"error": "You are not authorized to update this task"})
 			return
 		}
 
-		// Preserve the user ID (do not overwrite it)
-		updatedTask.UserID = existingTask.UserID
-		updatedTask.ID = existingTask.ID
+		// Update the task fields
+		existingTask.Title = updatedTask.Title
+		existingTask.Description = updatedTask.Description
+		existingTask.Done = updatedTask.Done
 
-		// Update the task
-		updatedTask, err = repository.UpdateTask(db, updatedTask)
-		if err != nil {
+		if _, err := repository.UpdateTask(db, existingTask); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update task"})
 			return
 		}
 
-		c.JSON(http.StatusOK, updatedTask)
+		c.JSON(http.StatusOK, existingTask)
 	})
 
 	r.DELETE("/tasks/:id", func(c *gin.Context) {
@@ -151,6 +140,7 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 			return
 		}
 
+		// Fetch the existing task from DB
 		existingTask, err := repository.GetTaskByID(db, uint(taskID))
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve task"})
@@ -159,6 +149,16 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 
 		if existingTask == nil {
 			c.JSON(http.StatusNotFound, gin.H{"error": "Task not found"})
+			return
+		}
+
+		// Get user ID from context
+		userID, _ := c.Get("userID")
+		role, _ := c.Get("role")
+
+		// Check if the user is allowed to delete the task
+		if role != "admin" && existingTask.UserID != userID.(uint) {
+			c.JSON(http.StatusForbidden, gin.H{"error": "You are not authorized to delete this task"})
 			return
 		}
 
