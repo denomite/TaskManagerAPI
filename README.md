@@ -18,47 +18,47 @@ JWT (JSON Web Tokens): Secure authentication system using JWT for user login and
 
 ## Features:
 
--   CRUD Operations:
+1.  CRUD Operations:
 
-Create, Read, Update, and Delete tasks.
+    Create, Read, Update, and Delete tasks.
 
-Tasks are stored in a PostgreSQL database.
+    Tasks are stored in a PostgreSQL database.
 
--   User Accounts:
+2.  User Accounts:
 
-Tasks are linked to user accounts, enabling personalized task management.
+    Tasks are linked to user accounts, enabling personalized task management.
 
--   Authentication and Authorization:
+3.  Authentication and Authorization:
 
-JWT: Implemented for secure login and token-based authentication.
+    JWT: Implemented for secure login and token-based authentication.
 
-Middleware: Protects API endpoints by verifying JWT tokens passed in HTTP headers.
+    Middleware: Protects API endpoints by verifying JWT tokens passed in HTTP headers.
 
-Role-Based Access Control (RBAC):
+4.  Role-Based Access Control (RBAC):
 
--   Regular Users: Can create and manage only their own tasks.
+    Regular Users: Can create and manage only their own tasks.
 
--   Admins: Can manage all tasks and users.
+    Admins: Can manage all tasks and users.
 
--   Error Handling:
+5.  Error Handling:
 
-Returns appropriate HTTP status codes for common errors such as 404 (Not Found), 400 (Bad Request), and 500 (Internal Server Error).
+    Returns appropriate HTTP status codes for common errors such as 404 (Not Found), 400 (Bad Request), and 500 (Internal Server Error).
 
-JSON response format for consistent API communication.
+    JSON response format for consistent API communication.
 
--   Task Management API:
+6.  Task Management API:
 
-API allows users to interact with their tasks through routes:
+    API allows users to interact with their tasks through routes:
 
-POST /tasks – Create a new task.
+    POST /tasks – Create a new task.
 
-GET /tasks – Get a list of all tasks.
+    GET /tasks – Get a list of all tasks.
 
-GET /tasks/:id – Get a specific task by ID.
+    GET /tasks/:id – Get a specific task by ID.
 
-PUT /tasks/:id – Update an existing task.
+    PUT /tasks/:id – Update an existing task.
 
-DELETE /tasks/:id – Delete a task.
+    DELETE /tasks/:id – Delete a task.
 
 ## Project structure
 
