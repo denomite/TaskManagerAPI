@@ -14,8 +14,10 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func AuthMiddleware() gin.HandlerFunc {
+// AuthMiddleware checks if the user is auhtneticated
+func AuthMiddleware(requiredRoles ...string) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		// Extract the token from the Authorization header
 		tokenString := c.GetHeader("Authorization")
 		fmt.Println("🔵 Received Authorization Header:", tokenString) // Log received token
 
@@ -26,9 +28,11 @@ func AuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
+		// Remove the "Bearer " prefix if present
 		tokenString = strings.TrimPrefix(tokenString, "Bearer ")
-		fmt.Println("🟢 Extracted Token:", tokenString) // Log extracted token
+		fmt.Println("🟢 Extracted Token:", tokenString)
 
+		// Validate the JWT token
 		claims, err := utils.ValidateJWT(tokenString)
 		if err != nil {
 			fmt.Println("🔴 Token validation failed:", err)
@@ -40,6 +44,46 @@ func AuthMiddleware() gin.HandlerFunc {
 		fmt.Println("🟢 Token is valid. Extracted UserID:", claims.UserID)
 		c.Set("userID", claims.UserID)
 
-		c.Next()
+		// Manually map fields from *utils.Claims to mapClaims
+		mapClaims := make(map[string]any)
+		mapClaims["user_id"] = claims.UserID
+		mapClaims["role"] = claims.Role
+
+		// Store userID and role in context
+		userID, ok := mapClaims["user_id"].(float64) // Convert to float64
+		if !ok {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid user ID"})
+			c.Abort()
+			return
+		}
+
+		role, ok := mapClaims["role"].(string)
+		if !ok {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid role"})
+			c.Abort()
+			return
+		}
+
+		// Set userID and role in context
+		c.Set("userID", uint(userID))
+		c.Set("role", role)
+
+		// Check if user has the required role (if provided)
+		if len(requiredRoles) > 0 {
+			allowed := false
+			for _, r := range requiredRoles {
+				if role == r {
+					allowed = true
+					break
+				}
+			}
+			if !allowed {
+				c.JSON(http.StatusForbidden, gin.H{"error": "Access denied"})
+				c.Abort()
+				return
+			}
+
+			c.Next()
+		}
 	}
 }

@@ -6,6 +6,7 @@ import (
 	"TaskManagerAPI/repository"
 	"TaskManagerAPI/utils"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -24,6 +25,7 @@ func Register(c *gin.Context) {
 	var input struct {
 		Username string `json:"username"`
 		Password string `json:"password"`
+		Role     string `json:"rol"` // admin or user
 	}
 
 	if err := c.ShouldBindJSON(&input); err != nil {
@@ -31,12 +33,28 @@ func Register(c *gin.Context) {
 		return
 	}
 
+	// Ensure the role is valid
+	if input.Role != "admin" && input.Role != "user" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Role must be 'admin' or 'user'"})
+		return
+	}
+
 	// Hash password before saving to DB
-	hashedPassword, _ := utils.HashPassword(input.Password)
-	user := models.User{Username: input.Username, Password: hashedPassword}
+	hashedPassword, err := utils.HashPassword(input.Password)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not hash password"})
+		return
+	}
 
 	// Retrieve the db connection from the context
 	db := c.MustGet("db").(*gorm.DB)
+
+	// Create user
+	user := models.User{
+		Username: input.Username,
+		Password: hashedPassword,
+		Role:     input.Role,
+	}
 
 	// Call repository to create the user
 	if err := repository.CreateUser(db, &user); err != nil {
@@ -92,6 +110,13 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	// Return token
-	c.JSON(http.StatusOK, gin.H{"token": token})
+	// Calculate token expiration time
+	expirationTime := time.Now().Add(time.Hour * 24).Unix()
+
+	// Return token and expiration time
+	c.JSON(http.StatusOK, gin.H{
+		"token":     token,
+		"role":      user.Role,
+		"expiresAt": expirationTime,
+	})
 }

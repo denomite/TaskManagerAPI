@@ -32,7 +32,7 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 
 	// Protected task routes (require authentication)
 	taskRoutes := r.Group("/tasks")
-	taskRoutes.Use(middleware.AuthMiddleware()) // 🔒 Protects all task routes
+	taskRoutes.Use(middleware.AuthMiddleware("admin")) // 🔒 Protects all task routes
 	{
 		taskRoutes.POST("/", func(c *gin.Context) {
 			var task models.Task

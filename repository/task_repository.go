@@ -70,6 +70,18 @@ func GetTaskByID(db *gorm.DB, id uint) (*Task, error) {
 	return &task, nil
 }
 
+// GetTasksByUserID fetches all tasks for a specific user
+func GetTasksByUserID(db *gorm.DB, userID uint) ([]models.Task, error) {
+	var tasks []models.Task
+
+	// Query tasks that match the userID
+	if err := db.Where("user_id = ?", userID).Find(&tasks).Error; err != nil {
+		return nil, err
+	}
+
+	return tasks, nil
+}
+
 func UpdateTask(db *gorm.DB, task *Task) (*Task, error) {
 	// We don't want to update the ID or CreatedAt field.
 	// We only update the fields that are passed in.

@@ -20,6 +20,7 @@ type Claims struct {
 
 func GenerateJWT(userID uint, role string) (string, error) {
 	jwtSecret := []byte(os.Getenv("JWT_SECRET"))
+
 	claims := jwt.MapClaims{
 		"user_id": userID,
 		"role":    role,
@@ -44,7 +45,7 @@ func ValidateJWT(tokenString string) (*Claims, error) {
 		return nil, errors.New("server misconfiguration: JWT_SECRET is missing")
 	}
 
-	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
+	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (any, error) {
 		return []byte(jwtSecret), nil
 	})
 	if err != nil {
@@ -73,7 +74,7 @@ func GetUserIDFromContext(c *gin.Context) (uint, error) {
 	tokenStr := strings.TrimPrefix(authHeader, "Bearer ")
 
 	claims := jwt.MapClaims{}
-	token, err := jwt.ParseWithClaims(tokenStr, &claims, func(token *jwt.Token) (interface{}, error) {
+	token, err := jwt.ParseWithClaims(tokenStr, &claims, func(token *jwt.Token) (any, error) {
 		return jwtSecret, nil
 	})
 	if err != nil || !token.Valid {

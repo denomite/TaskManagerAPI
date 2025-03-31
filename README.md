@@ -66,14 +66,22 @@ DELETE /tasks/:id – Delete a task.
 ├── main.go # Entry point to run the application  
 └── go.mod # Go module dependencies
 
+### In production
+
+-   Role-Based Access Control (Admin, User)
+-   Task prioritization and due dates for tasks
+
 ### In the near future
 
--   Docker and dockerized API
--   Implement rate limiting and logging for production-level realibility and protect against
-    exessive api requests
--   CI/CD integraton
--   Unit test
+#### For Production readiness:
 
--   RabbitMQ/Kafka
+-   Dockerize the API
+-   Implement rate limiting and logging
+-   CI/CD integraton
+-   Unit tests
+
+#### Advance features
+
+-   Integrate RabbitMQ/Kafka for asynchronous processing
 -   GraphQL
 -   OAuth2 or OpenID Connect
