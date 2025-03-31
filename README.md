@@ -2,7 +2,7 @@
 
 A Scalable RESTful Task Manager API built with Golang
 
-This is a simple and scalable Task Manager API that allows users to create, read, update, delete (CRUD) tasks, and link them to user accounts. It implements secure authentication using JSON Web Tokens (JWT) and stores data in a PostgreSQL database.
+This is API allows users to manage tasks with CRUD operations, implement role-based access control (RBAC) and handle user authentication and authorization.
 
 ## Tech Stack:
 
@@ -33,6 +33,12 @@ Tasks are linked to user accounts, enabling personalized task management.
 JWT: Implemented for secure login and token-based authentication.
 
 Middleware: Protects API endpoints by verifying JWT tokens passed in HTTP headers.
+
+Role-Based Access Control (RBAC):
+
+-   Regular Users: Can create and manage only their own tasks.
+
+-   Admins: Can manage all tasks and users.
 
 -   Error Handling:
 
