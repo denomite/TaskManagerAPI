@@ -71,23 +71,3 @@ JWT (JSON Web Tokens): Secure authentication system using JWT for user login and
 ├── /config # Configuration files (e.g., DB, environment variables)  
 ├── main.go # Entry point to run the application  
 └── go.mod # Go module dependencies
-
-### In production
-
--   Role-Based Access Control (Admin, User)
--   Task prioritization and due dates for tasks
-
-### In the near future
-
-#### For Production readiness:
-
--   Dockerize the API
--   Implement rate limiting and logging
--   CI/CD integraton
--   Unit tests
-
-#### Advance features
-
--   Integrate RabbitMQ/Kafka for asynchronous processing
--   GraphQL
--   OAuth2 or OpenID Connect
