@@ -96,6 +96,7 @@ func SetupTaskRouter(db *gorm.DB, r *gin.Engine) {
 	})
 
 	taskGroup.PUT("/:id", func(c *gin.Context) {
+		// Get the task ID from the URL
 		id := c.Param("id")
 		taskID, err := strconv.Atoi(id)
 		if err != nil {
@@ -103,28 +104,46 @@ func SetupTaskRouter(db *gorm.DB, r *gin.Engine) {
 			return
 		}
 
+		// Get the user ID and role from the context
+		userID, _ := c.Get("userID")
+		role, _ := c.Get("role")
+
+		// Retrieve the task from the database
+		existingTask, err := repository.GetTaskByID(db, uint(taskID))
+		if err != nil || existingTask == nil {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Task not found"})
+			return
+		}
+
+		// Check if the user is an admin or the owner of the task
+		if role != "admin" && existingTask.UserID != userID.(uint) {
+			c.JSON(http.StatusForbidden, gin.H{"error": "You do not have permission to update this task"})
+			return
+		}
+
+		// Bind the updated task data
 		var updatedTask *models.Task
 		if err := c.ShouldBindJSON(&updatedTask); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
 			return
 		}
 
-		existingTask, err := repository.GetTaskByID(db, uint(taskID))
-		if err != nil || existingTask == nil {
-			c.JSON(http.StatusNotFound, gin.H{"error": "Task not found"})
-			return
-		}
+		// Update task fields
+		existingTask.Title = updatedTask.Title
+		existingTask.Description = updatedTask.Description
 
-		updatedTask.ID = existingTask.ID
-		updatedTask, err = repository.UpdateTask(db, updatedTask)
+		// Save the updated task to the database
+		updatedTask, err = repository.UpdateTask(db, existingTask)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update task"})
 			return
 		}
+
 		c.JSON(http.StatusOK, updatedTask)
 	})
 
 	taskGroup.DELETE("/:id", func(c *gin.Context) {
+		// Get the task ID from the URL
 		id := c.Param("id")
 		taskID, err := strconv.Atoi(id)
 		if err != nil {
@@ -132,12 +151,24 @@ func SetupTaskRouter(db *gorm.DB, r *gin.Engine) {
 			return
 		}
 
+		// Get the user ID and role from the context
+		userID, _ := c.Get("userID")
+		role, _ := c.Get("role")
+
+		// Retrieve the task from the database
 		existingTask, err := repository.GetTaskByID(db, uint(taskID))
 		if err != nil || existingTask == nil {
 			c.JSON(http.StatusNotFound, gin.H{"error": "Task not found"})
 			return
 		}
 
+		// Check if the user is an admin or the owner of the task
+		if role != "admin" && existingTask.UserID != userID.(uint) {
+			c.JSON(http.StatusForbidden, gin.H{"error": "You do not have permission to delete this task"})
+			return
+		}
+
+		// Delete the task
 		err = repository.DeleteTask(db, uint(taskID))
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete task"})
