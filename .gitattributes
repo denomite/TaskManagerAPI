@@ -8,6 +8,7 @@
 # Ignore Docker-compose configuration if it contains sensitive data
 docker-compose.yml
 
+
 # Ignore other sensitive files
 *.key
 *.pem
