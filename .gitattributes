@@ -1,3 +1,9 @@
+# .mod and .sum files are text files with LF line endings
 *.mod text eol=lf
 *.sum text eol=lf
+
+# Ignore the .env file
 .env
+
+# Ignore Docker-compose configuration if it contains sensitive data
+docker-compose.yml
