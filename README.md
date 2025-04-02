@@ -6,6 +6,8 @@
 
 A Scalable RESTful Task Manager API built with Golang for managing tasks, implementing Role-Based Access Control (RBAC), and handling user authentication and authorization.
 
+<br/>
+
 ## 🚀 Tech Stack:
 
 <br/>
@@ -123,3 +125,31 @@ The API is dockerized for easy deployment. You can run it using the following:
     To run the tests, use:
 
     go test ./tests
+
+<br/>
+
+## ⚙️ Configuration
+
+<br/>
+
+    Environment Variables
+
+    Create a .env file in the root directory with the following:
+
+    DB_NAME=//user_manager
+    DB_USER=//user
+    DB_PASSWORD=//password
+    DB_HOST=localhost
+    DB_PORT=5432
+    JWT_SECRET=my_super_secret_key
+
+    Docker Setup
+    Ensure that the database credentials in the docker-compose.yml match those in your .env file.
+
+<br/>
+
+## 📜 License
+
+<br/>
+
+This project is open-source and available under the MIT License.
