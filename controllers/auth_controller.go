@@ -6,6 +6,7 @@ import (
 	"TaskManagerAPI/repository"
 	"TaskManagerAPI/utils"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -16,53 +17,53 @@ import (
 func SetupAuthRouter(db *gorm.DB, r *gin.Engine) {
 	authGroup := r.Group("/auth")
 	{
-		authGroup.POST("/register", Register)
+		authGroup.POST("/register", Register(db))
 		authGroup.POST("/login", Login)
 	}
 }
 
-func Register(c *gin.Context) {
-	var input struct {
-		Username string `json:"username"`
-		Password string `json:"password"`
-		Role     string `json:"rol"` // admin or user
+func Register(db *gorm.DB) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var input struct {
+			Username string `json:"username"`
+			Password string `json:"password"`
+			Role     string `json:"role"` // admin or user
+		}
+
+		if err := c.ShouldBindJSON(&input); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
+			return
+		}
+
+		// Ensure the role is valid
+		input.Role = strings.ToLower(strings.TrimSpace(input.Role))
+		if input.Role != "admin" && input.Role != "user" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Role must be 'admin' or 'user'"})
+			return
+		}
+
+		// Hash password before saving to DB
+		hashedPassword, err := utils.HashPassword(input.Password)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not hash password"})
+			return
+		}
+
+		// Create user
+		user := models.User{
+			Username: input.Username,
+			Password: hashedPassword,
+			Role:     input.Role,
+		}
+
+		// Call repository to create the user
+		if err := repository.CreateUser(db, &user); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create user"})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{"message": "User registered successfully"})
 	}
-
-	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
-		return
-	}
-
-	// Ensure the role is valid
-	if input.Role != "admin" && input.Role != "user" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Role must be 'admin' or 'user'"})
-		return
-	}
-
-	// Hash password before saving to DB
-	hashedPassword, err := utils.HashPassword(input.Password)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not hash password"})
-		return
-	}
-
-	// Retrieve the db connection from the context
-	db := c.MustGet("db").(*gorm.DB)
-
-	// Create user
-	user := models.User{
-		Username: input.Username,
-		Password: hashedPassword,
-		Role:     input.Role,
-	}
-
-	// Call repository to create the user
-	if err := repository.CreateUser(db, &user); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create user"})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"message": "User registered successfully"})
 }
 
 func Login(c *gin.Context) {

@@ -42,37 +42,15 @@ func AuthMiddleware(requiredRoles ...string) gin.HandlerFunc {
 		}
 
 		fmt.Println("🟢 Token is valid. Extracted UserID:", claims.UserID)
+
+		// Set userID and role in context directly from claims
 		c.Set("userID", claims.UserID)
+		c.Set("role", claims.Role)
 
-		// Manually map fields from *utils.Claims to mapClaims
-		mapClaims := make(map[string]any)
-		mapClaims["user_id"] = claims.UserID
-		mapClaims["role"] = claims.Role
-
-		// Store userID and role in context
-		userID, ok := mapClaims["user_id"].(float64) // Convert to float64
-		if !ok {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid user ID"})
-			c.Abort()
-			return
-		}
-
-		role, ok := mapClaims["role"].(string)
-		if !ok {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid role"})
-			c.Abort()
-			return
-		}
-
-		// Set userID and role in context
-		c.Set("userID", uint(userID))
-		c.Set("role", role)
-
-		// Check if user has the required role (if provided)
 		if len(requiredRoles) > 0 {
 			allowed := false
 			for _, r := range requiredRoles {
-				if role == r {
+				if claims.Role == r {
 					allowed = true
 					break
 				}
