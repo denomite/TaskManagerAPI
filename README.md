@@ -120,7 +120,7 @@ The API is dockerized for easy deployment. You can run it using the following:
 
 <br/>
 
-    The project includes simple unit tests for core functionality, located in the tests folder.
+    The project includes simple unit tests for core functionality, located in the main  folder.
 
     To run the tests, use:
 

@@ -10,6 +10,12 @@ import (
 	"gorm.io/gorm"
 )
 
+type User struct {
+	ID       uint   `json:"id"`
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
+
 type Task struct {
 	UserID      uint   `json:"id"`
 	Title       string `json:"name"`
@@ -17,7 +23,7 @@ type Task struct {
 }
 
 func TestCreateTask(t *testing.T) {
-	// dsn := "host=localhost user=testuser password=testpassword dbname=testdb sslmode=disable"
+	// Set up a test database connection
 	dsn := config.GetDatabaseDSN()
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
@@ -25,14 +31,22 @@ func TestCreateTask(t *testing.T) {
 	}
 
 	// Ensure the table exists
-	db.AutoMigrate(&Task{})
+	db.AutoMigrate(&User{}, &Task{})
 
-	// Test creating a task
-	task := Task{Title: "Test Task", Description: "This is a test task"}
-	result := db.Create(&task)
+	// Create a test user
+	user := User{Username: "testuser", Password: "testpassword"}
+	result := db.Create(&user)
+	if result.Error != nil {
+		t.Fatalf("failed to create test user: %v", result.Error)
+	}
+
+	// Now create a task associated with the user
+	task := Task{UserID: user.ID, Title: "Test Task", Description: "This is a test task"}
+	result = db.Create(&task)
 
 	// Ensure the task was created
 	assert.NoError(t, result.Error)
-	assert.NotZero(t, task.UserID)
-	assert.Equal(t, "Test Task", task.Title)
+	assert.NotZero(t, task.UserID)                           // Ensure that the task has a valid UserID
+	assert.Equal(t, "Test Task", task.Title)                 // Check that the title matches
+	assert.Equal(t, "This is a test task", task.Description) // Check description
 }
