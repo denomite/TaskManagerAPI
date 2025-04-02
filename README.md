@@ -1,8 +1,14 @@
+<br/>
+
 # TaskManagerAPI
+
+<br/>
 
 A Scalable RESTful Task Manager API built with Golang for managing tasks, implementing Role-Based Access Control (RBAC), and handling user authentication and authorization.
 
 ## 🚀 Tech Stack:
+
+<br/>
 
 -   Golang: Backend logic, routing, and API handling.
 
@@ -16,7 +22,11 @@ A Scalable RESTful Task Manager API built with Golang for managing tasks, implem
 
 -   Docker: Containerized API for easy deployment.
 
+<br/>
+
 ## ⚡ Features:
+
+<br/>
 
 1.  CRUD Operations:
 
@@ -66,7 +76,11 @@ A Scalable RESTful Task Manager API built with Golang for managing tasks, implem
 
     -   DELETE /tasks/:id – Delete a task.
 
+<br/>
+
 ## 🔧 Project structure
+
+<br/>
 
 /TaskManagerAPI  
 ├── /controllers # API logic and handler functions  
@@ -78,7 +92,11 @@ A Scalable RESTful Task Manager API built with Golang for managing tasks, implem
 ├── main.go # Entry point to run the application  
 └── go.mod # Go module dependencies
 
+<br/>
+
 ## 📦 Dockerized API
+
+<br/>
 
 The API is dockerized for easy deployment. You can run it using the following:
 
@@ -94,7 +112,11 @@ The API is dockerized for easy deployment. You can run it using the following:
 
     This repository includes a docker-compose.yml file that sets up the PostgreSQL database and the API container. You can modify the environment variables for the database   connection in the .env file.
 
+<br/>
+
 ## 🧪 Unit Tests
+
+<br/>
 
     The project includes simple unit tests for core functionality, located in the tests folder.
 
